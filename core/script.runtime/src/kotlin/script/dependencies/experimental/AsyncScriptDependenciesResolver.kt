@@ -16,18 +16,19 @@
 
 @file:Suppress("unused")
 
-package kotlin.script.templates
+package kotlin.script.dependencies.experimental
 
-import kotlin.reflect.KClass
+import kotlinx.coroutines.experimental.runBlocking
+import kotlin.script.dependencies.Environment
+import kotlin.script.dependencies.ScriptContents
 import kotlin.script.dependencies.ScriptDependenciesResolver
+import kotlin.script.dependencies.ScriptDependencyResult
 
-const val DEFAULT_SCRIPT_FILE_PATTERN = ".*\\.kts"
+interface AsyncScriptDependenciesResolver : ScriptDependenciesResolver {
+    suspend fun resolveAsync(
+            scriptContents: ScriptContents, environment: Environment
+    ): ScriptDependencyResult
 
-@Target(AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class ScriptTemplateDefinition(val resolver: KClass<out ScriptDependenciesResolver> = ScriptDependenciesResolver.Empty::class,
-                                          val scriptFilePattern: String = DEFAULT_SCRIPT_FILE_PATTERN)
-
-@Target(AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
-@Retention(AnnotationRetention.RUNTIME)
-annotation class AcceptedAnnotations(vararg val supportedAnnotationClasses: KClass<out Annotation>)
+    override fun resolve(scriptContents: ScriptContents, environment: Environment): ScriptDependencyResult
+            = runBlocking { resolveAsync(scriptContents, environment) }
+}
