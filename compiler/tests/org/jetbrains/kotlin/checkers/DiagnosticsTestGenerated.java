@@ -2610,6 +2610,12 @@ public class DiagnosticsTestGenerated extends AbstractDiagnosticsTest {
                     doTest(fileName);
                 }
 
+                @TestMetadata("referenceOfUnresolvedClass.kt")
+                public void testReferenceOfUnresolvedClass() throws Exception {
+                    String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/diagnostics/tests/callableReference/resolve/referenceOfUnresolvedClass.kt");
+                    doTest(fileName);
+                }
+
                 @TestMetadata("valVsFun.kt")
                 public void testValVsFun() throws Exception {
                     String fileName = KotlinTestUtils.navigationMetadata("compiler/testData/diagnostics/tests/callableReference/resolve/valVsFun.kt");

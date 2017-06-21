@@ -1,0 +1,5 @@
+package
+
+public fun foo(): kotlin.Unit
+public fun foo(/*0*/ x: kotlin.Any): kotlin.Unit
+public fun test(): kotlin.Unit
