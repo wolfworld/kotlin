@@ -169,12 +169,14 @@ class DefaultLambda(
     }
 }
 
-class ExpressionLambda(
+abstract class ExpressionLambda(isCrossInline: Boolean): LambdaInfo(isCrossInline)
+
+class PsiExpressionLambda(
         expression: KtExpression,
         private val typeMapper: KotlinTypeMapper,
         isCrossInline: Boolean,
         override val isBoundCallableReference: Boolean
-) : LambdaInfo(isCrossInline) {
+) : ExpressionLambda(isCrossInline) {
 
     override val lambdaClassType: Type
 
