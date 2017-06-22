@@ -215,6 +215,10 @@ class ExpressionCodegen(
 
     private fun generateCall(expression: IrMemberAccessExpression, superQualifier: ClassDescriptor?, data: BlockInfo): StackValue {
         val callable = resolveToCallable(expression, superQualifier != null)
+        return generateCall(expression, callable, data)
+    }
+
+    fun generateCall(expression: IrMemberAccessExpression, callable: Callable, data: BlockInfo): StackValue {
         if (callable is IrIntrinsicFunction) {
             return callable.invoke(mv, this, data)
         } else {

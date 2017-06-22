@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrMemberAccessExpression
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodGenericSignature
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
+import org.jetbrains.org.objectweb.asm.Label
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.commons.Method
 import org.jetbrains.org.objectweb.asm.tree.MethodNode
@@ -62,7 +63,18 @@ class IrSourceCompilerForInline(
         get() = DefaultSourceMapper(SourceInfo("TODO", "TODO", 100))
 
     override fun generateLambdaBody(adapter: MethodVisitor, jvmMethodSignature: JvmMethodSignature, lambdaInfo: ExpressionLambda): SMAP {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        lambdaInfo as? IrExpressionLambda ?: error("Expecting ir lambda, but $lambdaInfo")
+
+        val functionCodegen = object : FunctionCodegen(lambdaInfo.expression, codegen.classCodegen) {
+            override fun createMethod(flags: Int, signature: JvmMethodGenericSignature): MethodVisitor {
+                //TODO: to avoid smap assertion
+                adapter.visitLineNumber(1, Label())
+                return adapter
+            }
+        }
+        functionCodegen.generate()
+
+        return SMAP(/*TODO*/listOf(FileMapping("TODO", "TODO").also { it.id = 1; it.addRangeMapping(RangeMapping(1, 1, 1)) }))
     }
 
     override fun doCreateMethodNodeFromSource(callableDescriptor: FunctionDescriptor, jvmSignature: JvmMethodSignature, callDefault: Boolean, asmMethod: Method): SMAPAndMethodNode {
