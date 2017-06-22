@@ -33,6 +33,7 @@ import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.psi.KtBlockExpression
 import org.jetbrains.kotlin.psi.KtDeclaration
 import org.jetbrains.kotlin.psi.KtExpression
+import org.jetbrains.kotlin.psi.KtSuperTypeListEntry
 import java.util.*
 
 private val QUALIFIED_OPERATION = TokenSet.create(DOT, SAFE_ACCESS)
@@ -272,7 +273,7 @@ abstract class KotlinCommonBlock(
 
 
     private fun buildSubBlock(child: ASTNode, alignmentStrategy: CommonAlignmentStrategy, wrappingStrategy: WrappingStrategy): Block {
-        val childWrap = wrappingStrategy.getWrap(child.elementType)
+        val childWrap = wrappingStrategy.getWrap(child)
 
         // Skip one sub-level for operators, so type of block node is an element type of operator
         if (child.elementType === KtNodeTypes.OPERATION_REFERENCE) {
@@ -334,6 +335,16 @@ abstract class KotlinCommonBlock(
                     return getWrappingStrategyForItemList(commonSettings.METHOD_PARAMETERS_WRAP, KtNodeTypes.VALUE_PARAMETER)
                 }
             }
+
+            elementType === KtNodeTypes.SUPER_TYPE_LIST ->
+                return object : WrappingStrategy {
+                    override fun getWrap(childElement: ASTNode): Wrap? {
+                        if (childElement.psi is KtSuperTypeListEntry && childElement != childElement.treeParent.firstChildNode) {
+                            return Wrap.createWrap(commonSettings.EXTENDS_LIST_WRAP, true)
+                        }
+                        return null
+                    }
+                }
         }
 
         return WrappingStrategy.NoWrapping
@@ -496,8 +507,8 @@ private fun getPrevWithoutWhitespaceAndComments(pNode: ASTNode?): ASTNode? {
 private fun getWrappingStrategyForItemList(wrapType: Int, itemType: IElementType): WrappingStrategy {
     val itemWrap = Wrap.createWrap(wrapType, false)
     return object : WrappingStrategy {
-        override fun getWrap(childElementType: IElementType): Wrap? {
-            return if (childElementType === itemType) itemWrap else null
+        override fun getWrap(childElement: ASTNode): Wrap? {
+            return if (childElement.elementType === itemType) itemWrap else null
         }
     }
 }
