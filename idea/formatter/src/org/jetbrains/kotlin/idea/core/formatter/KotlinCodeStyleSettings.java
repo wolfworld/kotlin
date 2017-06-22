@@ -43,6 +43,8 @@ public class KotlinCodeStyleSettings extends CustomCodeStyleSettings {
     public boolean CONTINUATION_INDENT_IN_PARAMETER_LISTS = true;
     public boolean CONTINUATION_INDENT_FOR_EXPRESSION_BODIES = true;
     public boolean CONTINUATION_INDENT_FOR_CHAINED_CALLS = true;
+    public int BLANK_LINES_BETWEEN_EXPRESSION_WHEN_BRANCHES = 0;
+    public int BLANK_LINES_BETWEEN_BLOCK_WHEN_BRANCHES = 0;
 
     public KotlinCodeStyleSettings(CodeStyleSettings container) {
         super("JetCodeStyleSettings", container);

@@ -58,3 +58,5 @@ fun some(x: Any) {
         }
     }
 }
+
+// SET_INT: BLANK_LINES_BETWEEN_BLOCK_WHEN_BRANCHES = 0

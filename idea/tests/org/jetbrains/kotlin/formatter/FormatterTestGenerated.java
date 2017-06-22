@@ -764,9 +764,21 @@ public class FormatterTestGenerated extends AbstractFormatterTest {
             doTest(fileName);
         }
 
+        @TestMetadata("WhenBlockBlankLines.after.kt")
+        public void testWhenBlockBlankLines() throws Exception {
+            String fileName = KotlinTestUtils.navigationMetadata("idea/testData/formatter/WhenBlockBlankLines.after.kt");
+            doTest(fileName);
+        }
+
         @TestMetadata("WhenEntryExpr.after.kt")
         public void testWhenEntryExpr() throws Exception {
             String fileName = KotlinTestUtils.navigationMetadata("idea/testData/formatter/WhenEntryExpr.after.kt");
+            doTest(fileName);
+        }
+
+        @TestMetadata("WhenExpBlankLines.after.kt")
+        public void testWhenExpBlankLines() throws Exception {
+            String fileName = KotlinTestUtils.navigationMetadata("idea/testData/formatter/WhenExpBlankLines.after.kt");
             doTest(fileName);
         }
 
