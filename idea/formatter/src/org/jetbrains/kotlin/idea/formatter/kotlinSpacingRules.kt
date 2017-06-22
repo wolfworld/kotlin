@@ -32,6 +32,7 @@ import org.jetbrains.kotlin.idea.formatter.KotlinSpacingBuilder.CustomSpacingBui
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.isObjectLiteral
 import org.jetbrains.kotlin.psi.psiUtil.textRangeWithoutComments
 
 val MODIFIERS_LIST_ENTRIES = TokenSet.orSet(TokenSet.create(ANNOTATION_ENTRY, ANNOTATION), MODIFIER_KEYWORDS)
@@ -76,6 +77,21 @@ fun createSpacingBuilder(settings: CodeStyleSettings, builderUtil: KotlinSpacing
                 if (klass.isEnum() && right.node.elementType in DECLARATIONS) {
                     createSpacing(0, minLineFeeds = 2, keepBlankLines = settings.KEEP_BLANK_LINES_IN_DECLARATIONS)
                 } else null
+            }
+
+            inPosition(parent = CLASS_BODY, left = LBRACE).customRule { parent, _, right ->
+                if (right.node.elementType == RBRACE) {
+                    return@customRule createSpacing(0)
+                }
+                val parentPsi = (parent.node.psi as KtClassBody).parent as? KtClassOrObject ?: return@customRule null
+                if ((parentPsi as? KtClass)?.isEnum() == true ||
+                    parentPsi.isObjectLiteral() == true ||
+                    commonCodeStyleSettings.BLANK_LINES_AFTER_CLASS_HEADER == 0) {
+                    null
+                }
+                else {
+                    createSpacing(0, minLineFeeds = commonCodeStyleSettings.BLANK_LINES_AFTER_CLASS_HEADER + 1)
+                }
             }
 
             val parameterWithDocCommentRule = {
@@ -130,8 +146,6 @@ fun createSpacingBuilder(settings: CodeStyleSettings, builderUtil: KotlinSpacing
             after(DOC_COMMENT).lineBreakInCode()
 
             // =============== Spacing ================
-            betweenInside(LBRACE, RBRACE, CLASS_BODY).spaces(0)
-
             before(COMMA).spaceIf(kotlinCommonSettings.SPACE_BEFORE_COMMA)
             after(COMMA).spaceIf(kotlinCommonSettings.SPACE_AFTER_COMMA)
 
