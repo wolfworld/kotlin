@@ -50,12 +50,6 @@ public class KotlinCodegenFacade {
         state.getFactory().done();
     }
 
-    private static void doCheckCancelled(GenerationState state) {
-        if (state.getClassBuilderMode().generateBodies) {
-            ProgressIndicatorAndCompilationCanceledStatus.checkCanceled();
-        }
-    }
-
     public static void generatePackage(
             @NotNull GenerationState state,
             @NotNull FqName packageFqName,
