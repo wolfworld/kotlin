@@ -16,14 +16,18 @@
 
 package org.jetbrains.kotlin.backend.jvm.codegen
 
-import org.jetbrains.kotlin.codegen.*
-import org.jetbrains.kotlin.codegen.inline.*
+import org.jetbrains.kotlin.codegen.Callable
+import org.jetbrains.kotlin.codegen.StackValue
+import org.jetbrains.kotlin.codegen.ValueKind
+import org.jetbrains.kotlin.codegen.inline.InlineCodegen
+import org.jetbrains.kotlin.codegen.inline.LambdaInfo
+import org.jetbrains.kotlin.codegen.inline.SourceCompilerForInline
+import org.jetbrains.kotlin.codegen.inline.TypeParameterMappings
 import org.jetbrains.kotlin.codegen.state.GenerationState
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.descriptors.ValueParameterDescriptor
-import org.jetbrains.kotlin.ir.expressions.IrBlock
-import org.jetbrains.kotlin.ir.expressions.IrExpression
-import org.jetbrains.kotlin.ir.expressions.IrStatementOrigin
+import org.jetbrains.kotlin.ir.expressions.*
+import org.jetbrains.kotlin.utils.keysToMap
 import org.jetbrains.org.objectweb.asm.Type
 
 class IrInlineCodegen(
@@ -39,9 +43,29 @@ class IrInlineCodegen(
     }
 
     override fun genValueAndPut(valueParameterDescriptor: ValueParameterDescriptor?, argumentExpression: IrExpression, parameterType: Type, parameterIndex: Int, codegen: ExpressionCodegen, blockInfo: BlockInfo) {
+        //if (isInliningParameter(argumentExpression, valueParameterDescriptor)) {
         if (argumentExpression is IrBlock && argumentExpression.origin == IrStatementOrigin.LAMBDA) {
-            //TODO
+            val irReference = argumentExpression.statements.filterIsInstance<IrFunctionReference>().single()
+            val irFunction = irReference.symbol.owner
+            TODO()
         }
-        super.genValueAndPut(valueParameterDescriptor, argumentExpression, parameterType, parameterIndex, codegen, blockInfo)
+        else {
+            putValueOnStack(argumentExpression, parameterType, valueParameterDescriptor?.index ?: -1)
+        }
+    }
+
+
+    fun putValueOnStack(argumentExpression: IrExpression, valueType: Type, paramIndex: Int) {
+        val onStack = codegen.gen(argumentExpression, valueType, BlockInfo.create())
+        putArgumentOrCapturedToLocalVal(onStack.type, onStack, -1, paramIndex, ValueKind.CAPTURED)
+    }
+
+    override fun beforeValueParametersStart() {
+        invocationParamBuilder.markValueParametersStart()
+    }
+
+    override fun genCall(callableMethod: Callable, callDefault: Boolean, codegen: ExpressionCodegen, expression: IrMemberAccessExpression) {
+        val typeArguments = expression.descriptor.typeParameters.keysToMap { expression.getTypeArgumentOrDefault(it) }
+        performInline(typeArguments, callDefault, codegen)
     }
 }

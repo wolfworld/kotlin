@@ -231,6 +231,7 @@ class ExpressionCodegen(
                 callGenerator.genValueAndPut(null, this, callable.extensionReceiverType!!, -1, this@ExpressionCodegen, data)
             }
 
+            callGenerator.beforeValueParametersStart()
             val defaultMask = DefaultCallArgs(callable.valueParameterTypes.size)
             expression.descriptor.valueParameters.forEachIndexed { i, parameterDescriptor ->
                 val arg = expression.getValueArgument(i)
@@ -261,7 +262,8 @@ class ExpressionCodegen(
             callGenerator.genCall(
                     callable,
                     defaultMask.generateOnStackIfNeeded(callGenerator, expression.descriptor is ConstructorDescriptor, this),
-                    this
+                    this,
+                    expression
             )
 
             val returnType = expression.descriptor.returnType
@@ -954,7 +956,7 @@ class ExpressionCodegen(
             return TODO()
         }
         else {
-            return IrInlineCodegen(this, state, original, typeParameterMappings!!, IrSourceCompilerForInline(state, element))
+            return IrInlineCodegen(this, state, original, typeParameterMappings!!, IrSourceCompilerForInline(state, element, this))
         }
     }
 

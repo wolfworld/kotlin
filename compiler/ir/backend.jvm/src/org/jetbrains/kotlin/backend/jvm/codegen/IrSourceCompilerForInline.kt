@@ -25,7 +25,10 @@ import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.FunctionDescriptor
 import org.jetbrains.kotlin.incremental.components.LookupLocation
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
+import org.jetbrains.kotlin.ir.declarations.IrFunction
+import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrMemberAccessExpression
+import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodGenericSignature
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature
 import org.jetbrains.org.objectweb.asm.MethodVisitor
 import org.jetbrains.org.objectweb.asm.commons.Method
@@ -33,7 +36,8 @@ import org.jetbrains.org.objectweb.asm.tree.MethodNode
 
 class IrSourceCompilerForInline(
         override val state: GenerationState,
-        override val callElement: IrMemberAccessExpression
+        override val callElement: IrMemberAccessExpression,
+        private val codegen: ExpressionCodegen
         ): SourceCompilerForInline {
 
 
@@ -62,7 +66,26 @@ class IrSourceCompilerForInline(
     }
 
     override fun doCreateMethodNodeFromSource(callableDescriptor: FunctionDescriptor, jvmSignature: JvmMethodSignature, callDefault: Boolean, asmMethod: Method): SMAPAndMethodNode {
-        TODO("not implemented")
+        assert(callableDescriptor == callElement.descriptor.original)
+        val owner = (callElement as IrCall).symbol.owner as IrFunction
+        //ExpressionCodegen()
+        var node: MethodNode? = null
+        var maxCalcAdapter: MethodVisitor? = null
+        val functionCodegen = object : FunctionCodegen(owner, codegen.classCodegen) {
+            override fun createMethod(flags: Int, signature: JvmMethodGenericSignature): MethodVisitor {
+                node = MethodNode(API,
+                                  flags,
+                                  signature.asmMethod.name, signature.asmMethod.descriptor,
+                                  signature.genericsSignature, null)
+                maxCalcAdapter = wrapWithMaxLocalCalc(node!!)
+                return maxCalcAdapter!!
+            }
+        }
+        functionCodegen.generate()
+        maxCalcAdapter!!.visitMaxs(-1, -1)
+        maxCalcAdapter!!.visitEnd()
+
+        return SMAPAndMethodNode(node!!, SMAP(/*TODO*/listOf(FileMapping.SKIP)))
     }
 
     override fun generateAndInsertFinallyBlocks(intoNode: MethodNode, insertPoints: List<MethodInliner.PointForExternalFinallyBlocks>, offsetForFinallyLocalVar: Int) {
