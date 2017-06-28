@@ -25,7 +25,7 @@ import org.jetbrains.kotlin.load.java.components.TypeUsage
 import org.jetbrains.kotlin.load.java.descriptors.JavaMethodDescriptor
 import org.jetbrains.kotlin.load.java.descriptors.JavaPropertyDescriptor
 import org.jetbrains.kotlin.load.java.lazy.LazyJavaResolverContext
-import org.jetbrains.kotlin.load.java.lazy.child
+import org.jetbrains.kotlin.load.java.lazy.childForMethod
 import org.jetbrains.kotlin.load.java.lazy.resolveAnnotations
 import org.jetbrains.kotlin.load.java.lazy.types.toAttributes
 import org.jetbrains.kotlin.load.java.structure.JavaArrayType
@@ -113,7 +113,7 @@ abstract class LazyJavaScope(protected val c: LazyJavaResolverContext) : MemberS
                 ownerDescriptor, annotations, method.name, c.components.sourceElementFactory.source(method)
         )
 
-        val c = c.child(functionDescriptorImpl, method)
+        val c = c.childForMethod(functionDescriptorImpl, method)
 
         val methodTypeParameters = method.typeParameters.map { p -> c.typeParameterResolver.resolveTypeParameter(p)!! }
         val valueParameters = resolveValueParameters(c, functionDescriptorImpl, method.valueParameters)

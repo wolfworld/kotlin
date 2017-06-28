@@ -37,7 +37,7 @@ import javax.annotation.meta.TypeQualifierDefault;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Nonnull
-@TypeQualifierDefault({ElementType.METHOD, ElementType.PARAMETER})
+@TypeQualifierDefault({ElementType.TYPE_USE})
 public @interface NonNullApi {
 }
 
@@ -73,7 +73,7 @@ fun main(a: A) {
     a.bar().length
     a.bar()<!UNNECESSARY_NOT_NULL_ASSERTION!>!!<!>.length
 
-    a.field?.length
+    a.field<!UNNECESSARY_SAFE_CALL!>?.<!>length
     a.field.length
 
     a.baz()<!UNSAFE_CALL!>.<!>get(0)

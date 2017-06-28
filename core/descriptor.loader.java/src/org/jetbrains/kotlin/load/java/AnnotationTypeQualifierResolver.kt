@@ -77,7 +77,12 @@ class AnnotationTypeQualifierResolver(storageManager: StorageManager) {
                 annotationDescriptor.annotationClass!!
                         .annotations.findAnnotation(TYPE_QUALIFIER_DEFAULT_FQNAME)!!
                         .allValueArguments
-                        .flatMap { (_, argument) -> argument.mapConstantToQualifierApplicabilityTypes() }
+                        .flatMap { (parameter, argument) ->
+                            if (parameter.name == JvmAnnotationNames.DEFAULT_ANNOTATION_MEMBER_NAME)
+                                argument.mapConstantToQualifierApplicabilityTypes()
+                            else
+                                emptyList()
+                        }
                         .fold(0) { acc: Int, applicabilityType -> acc or (1 shl applicabilityType.ordinal) }
 
         val typeQualifier =

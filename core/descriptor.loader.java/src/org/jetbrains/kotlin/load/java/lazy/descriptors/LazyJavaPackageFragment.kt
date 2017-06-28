@@ -18,10 +18,9 @@ package org.jetbrains.kotlin.load.java.lazy.descriptors
 
 import org.jetbrains.kotlin.descriptors.ClassDescriptor
 import org.jetbrains.kotlin.descriptors.SourceElement
-import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.impl.PackageFragmentDescriptorImpl
 import org.jetbrains.kotlin.load.java.lazy.LazyJavaResolverContext
-import org.jetbrains.kotlin.load.java.lazy.childOverridingTypeQualifiers
+import org.jetbrains.kotlin.load.java.lazy.childForClassOrPackage
 import org.jetbrains.kotlin.load.java.lazy.resolveAnnotations
 import org.jetbrains.kotlin.load.java.structure.JavaClass
 import org.jetbrains.kotlin.load.java.structure.JavaPackage
@@ -33,10 +32,10 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.storage.getValue
 
 class LazyJavaPackageFragment(
-        outerC: LazyJavaResolverContext,
+        outerContext: LazyJavaResolverContext,
         private val jPackage: JavaPackage
-) : PackageFragmentDescriptorImpl(outerC.module, jPackage.fqName) {
-    private val c = outerC.childOverridingTypeQualifiers(this)
+) : PackageFragmentDescriptorImpl(outerContext.module, jPackage.fqName) {
+    private val c = outerContext.childForClassOrPackage(this)
 
     internal val binaryClasses by c.storageManager.createLazyValue {
         c.components.packageMapper.findPackageParts(fqName.asString()).mapNotNull { partName ->
@@ -53,10 +52,7 @@ class LazyJavaPackageFragment(
             onRecursiveCall = listOf()
     )
 
-    private val packageAnnotations = c.resolveAnnotations(jPackage)
-
-    override val annotations: Annotations
-        get() = packageAnnotations
+    override val annotations = c.resolveAnnotations(jPackage)
 
     internal fun getSubPackageFqNames(): List<FqName> = subPackages()
 

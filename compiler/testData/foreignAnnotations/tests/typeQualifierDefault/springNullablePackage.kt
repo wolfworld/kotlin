@@ -1,4 +1,5 @@
 // !DIAGNOSTICS: -UNUSED_VARIABLE -UNUSED_PARAMETER
+// RENDER_PACKAGE: test
 
 // FILE: spr/Nullable.java
 
