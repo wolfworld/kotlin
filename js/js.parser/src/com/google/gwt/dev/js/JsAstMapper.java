@@ -1111,11 +1111,11 @@ public class JsAstMapper {
         CodePosition location = node.getPosition();
         if (location != null) {
             JsLocation jsLocation = new JsLocation(fileName, location.getLine(), location.getOffset());
-            if (astNode instanceof SourceInfoAwareJsNode) {
-                astNode.setSource(jsLocation);
-            }
-            else if (astNode instanceof JsExpressionStatement) {
+            if (astNode instanceof JsExpressionStatement) {
                 ((JsExpressionStatement) astNode).getExpression().setSource(jsLocation);
+            }
+            else {
+                astNode.setSource(jsLocation);
             }
         }
         return astNode;
