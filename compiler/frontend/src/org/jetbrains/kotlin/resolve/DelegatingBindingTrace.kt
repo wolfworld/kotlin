@@ -61,12 +61,11 @@ open class DelegatingBindingTrace(private val parentContext: BindingContext,
     private val bindingContext = MyBindingContext()
 
     init {
-        this.mutableDiagnostics = if (filter.ignoreDiagnostics)
-            null
-        else if (withParentDiagnostics)
-            MutableDiagnosticsWithSuppression(bindingContext, parentContext.diagnostics)
-        else
-            MutableDiagnosticsWithSuppression(bindingContext)
+        this.mutableDiagnostics = when {
+            filter.ignoreDiagnostics -> null
+            withParentDiagnostics -> MutableDiagnosticsWithSuppression(bindingContext, parentContext.diagnostics)
+            else -> MutableDiagnosticsWithSuppression(bindingContext)
+        }
     }
 
     constructor(parentContext: BindingContext,

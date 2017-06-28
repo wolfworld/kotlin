@@ -153,15 +153,20 @@ internal object RawSubstitution : TypeSubstitution() {
                 Variance.INVARIANT, erasedUpperBound
         )
         RawBound.UPPER, RawBound.NOT_RAW -> {
-            if (!parameter.variance.allowsOutPosition)
-                // in T -> Comparable<Nothing>
-                TypeProjectionImpl(Variance.INVARIANT, parameter.builtIns.nothingType)
-            else if (erasedUpperBound.constructor.parameters.isNotEmpty())
-                // T : Enum<E> -> out Enum<*>
-                TypeProjectionImpl(Variance.OUT_VARIANCE, erasedUpperBound)
-            else
-                // T : String -> *
-                makeStarProjection(parameter, attr)
+            when {
+                !parameter.variance.allowsOutPosition -> {
+                    // in T -> Comparable<Nothing>
+                    TypeProjectionImpl(Variance.INVARIANT, parameter.builtIns.nothingType)
+                }
+                erasedUpperBound.constructor.parameters.isNotEmpty() -> {
+                    // T : Enum<E> -> out Enum<*>
+                    TypeProjectionImpl(Variance.OUT_VARIANCE, erasedUpperBound)
+                }
+                else -> {
+                    // T : String -> *
+                    makeStarProjection(parameter, attr)
+                }
+            }
         }
     }
 

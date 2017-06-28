@@ -57,9 +57,18 @@ private fun KotlinType.extractQualifiers(): JavaTypeQualifiers {
 
     val mapping = JavaToKotlinClassMap
     return JavaTypeQualifiers(
-            if (lower.isMarkedNullable) NULLABLE else if (!upper.isMarkedNullable) NOT_NULL else null,
-            if (mapping.isReadOnly(lower)) READ_ONLY else if (mapping.isMutable(upper)) MUTABLE else null,
-            isNotNullTypeParameter = unwrap() is NotNullTypeParameter)
+            nullability = when {
+                lower.isMarkedNullable -> NULLABLE
+                !upper.isMarkedNullable -> NOT_NULL
+                else -> null
+            },
+            mutability = when {
+                mapping.isReadOnly(lower) -> READ_ONLY
+                mapping.isMutable(upper) -> MUTABLE
+                else -> null
+            },
+            isNotNullTypeParameter = unwrap() is NotNullTypeParameter
+    )
 }
 
 private fun KotlinType.extractQualifiersFromAnnotations(): JavaTypeQualifiers {
@@ -158,7 +167,11 @@ private fun KotlinType.computeQualifiersForOverride(fromSupertypes: Collection<K
 
     if (isCovariant) {
         fun <T : Any> Set<T>.selectCovariantly(low: T, high: T, own: T?): T? {
-            val supertypeQualifier = if (low in this) low else if (high in this) high else null
+            val supertypeQualifier = when {
+                low in this -> low
+                high in this -> high
+                else -> null
+            }
             return if (supertypeQualifier == low && own == high) null else own ?: supertypeQualifier
         }
         return createJavaTypeQualifiers(

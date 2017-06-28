@@ -345,44 +345,44 @@ class DefaultExpressionConverter : JavaElementVisitor(), ExpressionConverter {
         if (target is KtLightMethod) {
             val origin = target.kotlinOrigin
             val isTopLevel = origin?.getStrictParentOfType<KtClassOrObject>() == null
-            if (origin is KtProperty || origin is KtPropertyAccessor || origin is KtParameter) {
-                val property = if (origin is KtPropertyAccessor)
-                    origin.parent as KtProperty
-                else
-                    origin as KtNamedDeclaration
-                val parameterCount = target.parameterList.parameters.size
-                if (parameterCount == arguments.size) {
-                    val propertyName = Identifier.withNoPrototype(property.name!!, isNullable)
-                    val isExtension = property.isExtensionDeclaration()
-                    val propertyAccess = if (isTopLevel) {
-                        if (isExtension)
-                            QualifiedExpression(codeConverter.convertExpression(arguments.firstOrNull(), shouldParenthesize = true), propertyName, null).assignNoPrototype()
-                        else
+            when (origin) {
+                is KtProperty, is KtPropertyAccessor, is KtParameter -> {
+                    val property = if (origin is KtPropertyAccessor)
+                        origin.parent as KtProperty
+                    else
+                        origin as KtNamedDeclaration
+                    val parameterCount = target.parameterList.parameters.size
+                    if (parameterCount == arguments.size) {
+                        val propertyName = Identifier.withNoPrototype(property.name!!, isNullable)
+                        val isExtension = property.isExtensionDeclaration()
+                        val propertyAccess = if (isTopLevel) {
+                            if (isExtension)
+                                QualifiedExpression(codeConverter.convertExpression(arguments.firstOrNull(), shouldParenthesize = true), propertyName, null).assignNoPrototype()
+                            else
+                                propertyName
+                        }
+                        else if (qualifier != null) {
+                            QualifiedExpression(codeConverter.convertExpression(qualifier), propertyName, dot).assignNoPrototype()
+                        }
+                        else {
                             propertyName
-                    }
-                    else if (qualifier != null) {
-                        QualifiedExpression(codeConverter.convertExpression(qualifier), propertyName, dot).assignNoPrototype()
-                    }
-                    else {
-                        propertyName
-                    }
-
-                    when(if (isExtension) parameterCount - 1 else parameterCount) {
-                        0 /* getter */ -> {
-                            result = propertyAccess
-                            return
                         }
 
-                        1 /* setter */ -> {
-                            val argument = codeConverter.convertExpression(arguments[if (isExtension) 1 else 0])
-                            result = AssignmentExpression(propertyAccess, argument, Operator.EQ)
-                            return
+                        when(if (isExtension) parameterCount - 1 else parameterCount) {
+                            0 /* getter */ -> {
+                                result = propertyAccess
+                                return
+                            }
+
+                            1 /* setter */ -> {
+                                val argument = codeConverter.convertExpression(arguments[if (isExtension) 1 else 0])
+                                result = AssignmentExpression(propertyAccess, argument, Operator.EQ)
+                                return
+                            }
                         }
                     }
                 }
-            }
-            else if (origin is KtFunction) {
-                if (isTopLevel) {
+                is KtFunction -> if (isTopLevel) {
                     result = if (origin.isExtensionDeclaration()) {
                         val qualifier = codeConverter.convertExpression(arguments.firstOrNull(), shouldParenthesize = true)
                         MethodCallExpression.build(qualifier,
@@ -401,27 +401,27 @@ class DefaultExpressionConverter : JavaElementVisitor(), ExpressionConverter {
                     }
                     return
                 }
-            }
-            else if (origin == null){
-                val resolvedQualifier = (methodExpr.qualifier as? PsiReferenceExpression)?.resolve()
-                if (isFacadeClassFromLibrary(resolvedQualifier)) {
-                    result = if (target.isKotlinExtensionFunction()) {
-                        val qualifier = codeConverter.convertExpression(arguments.firstOrNull(), shouldParenthesize = true)
-                        MethodCallExpression.build(qualifier,
-                                                   methodExpr.referenceName!!,
-                                                   convertArguments(expression, isExtension = true),
-                                                   typeArguments,
-                                                   isNullable,
-                                                   dot)
+                null -> {
+                    val resolvedQualifier = (methodExpr.qualifier as? PsiReferenceExpression)?.resolve()
+                    if (isFacadeClassFromLibrary(resolvedQualifier)) {
+                        result = if (target.isKotlinExtensionFunction()) {
+                            val qualifier = codeConverter.convertExpression(arguments.firstOrNull(), shouldParenthesize = true)
+                            MethodCallExpression.build(qualifier,
+                                                       methodExpr.referenceName!!,
+                                                       convertArguments(expression, isExtension = true),
+                                                       typeArguments,
+                                                       isNullable,
+                                                       dot)
+                        }
+                        else {
+                            MethodCallExpression.build(null,
+                                                       methodExpr.referenceName!!,
+                                                       convertArguments(expression),
+                                                       typeArguments,
+                                                       isNullable)
+                        }
+                        return
                     }
-                    else {
-                        MethodCallExpression.build(null,
-                                                   methodExpr.referenceName!!,
-                                                   convertArguments(expression),
-                                                   typeArguments,
-                                                   isNullable)
-                    }
-                    return
                 }
             }
         }

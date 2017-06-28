@@ -373,8 +373,16 @@ fun TypeUsage.toAttributes(
 
 fun JavaTypeAttributes.computeAttributes(allowFlexible: Boolean, isRaw: Boolean, forLower: Boolean) =
         object : JavaTypeAttributes by this {
-            override val flexibility = if (!allowFlexible) INFLEXIBLE else if(forLower) FLEXIBLE_LOWER_BOUND else FLEXIBLE_UPPER_BOUND
-            override val rawBound = if (!isRaw) RawBound.NOT_RAW else if(forLower) RawBound.LOWER else RawBound.UPPER
+            override val flexibility = when {
+                !allowFlexible -> INFLEXIBLE
+                forLower -> FLEXIBLE_LOWER_BOUND
+                else -> FLEXIBLE_UPPER_BOUND
+            }
+            override val rawBound = when {
+                !isRaw -> RawBound.NOT_RAW
+                forLower -> RawBound.LOWER
+                else -> RawBound.UPPER
+            }
         }
 
 
