@@ -18,29 +18,22 @@ package org.jetbrains.kotlin.js.translate.expression
 
 import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.js.backend.ast.*
-import org.jetbrains.kotlin.js.translate.context.InlineFunctionContext
+import org.jetbrains.kotlin.js.inline.util.FunctionWithWrapper
 import org.jetbrains.kotlin.js.translate.context.Namer
 import org.jetbrains.kotlin.js.translate.context.TranslationContext
+import org.jetbrains.kotlin.js.translate.utils.JsAstUtils
 
 private val METADATA_PROPERTIES_COUNT = 2
 
-class InlineMetadata(val tag: JsStringLiteral, val function: JsFunction, val callExpression: JsExpression) {
+class InlineMetadata(val tag: JsStringLiteral, val function: FunctionWithWrapper) {
     companion object {
         @JvmStatic
         fun compose(function: JsFunction, descriptor: CallableDescriptor, context: TranslationContext): InlineMetadata {
             val tag = JsStringLiteral(Namer.getFunctionTag(descriptor, context.config))
-            return InlineMetadata(tag, function, wrapInlineFunction(context.inlineFunctionContext!!, function))
-        }
-
-        private fun wrapInlineFunction(context: InlineFunctionContext, function: JsFunction): JsExpression {
-            if (context.importBlock.isEmpty && context.declarationsBlock.isEmpty) return function
-
-            val iif = JsFunction(function.scope, JsBlock(), "")
-            iif.body.statements += context.importBlock.statements
-            iif.body.statements += context.declarationsBlock.statements
-            iif.body.statements += JsReturn(function)
-
-            return JsInvocation(iif)
+            val inliningContext = context.inlineFunctionContext!!
+            val block = JsBlock(inliningContext.importBlock.statements + inliningContext.declarationsBlock.statements)
+            block.statements += JsReturn(function)
+            return InlineMetadata(tag, FunctionWithWrapper(function, block))
         }
 
         @JvmStatic
@@ -57,31 +50,59 @@ class InlineMetadata(val tag: JsStringLiteral, val function: JsFunction, val cal
             val arguments = call.arguments
             if (arguments.size != METADATA_PROPERTIES_COUNT) return null
 
-            val tag = arguments[0] as? JsStringLiteral
+            val tag = arguments[0] as? JsStringLiteral ?: return null
             val callExpression = arguments[1]
-            val function = tryExtractFunction(callExpression)
-            if (tag == null || function == null) return null
+            val function = tryExtractFunction(callExpression) ?: return null
 
-            return InlineMetadata(tag, function, callExpression)
+            return InlineMetadata(tag, function)
         }
 
         @JvmStatic
-        fun tryExtractFunction(callExpression: JsExpression): JsFunction? {
-            return when (callExpression) {
-                is JsInvocation -> {
-                    val qualifier = callExpression.qualifier
-                    if (callExpression.arguments.isNotEmpty() || qualifier !is JsFunction) return null
-                    (qualifier.body.statements.lastOrNull() as? JsReturn)?.expression as? JsFunction
-                }
-                is JsFunction -> callExpression
-                else -> null
-            }
+        fun tryExtractFunction(callExpression: JsExpression): FunctionWithWrapper? {
+            if (callExpression !is JsFunction) return null
+            fun simple() = FunctionWithWrapper(callExpression, null)
+
+            val name = callExpression.name ?: return simple()
+            if (callExpression.body.statements.size != 2) return simple()
+            val (assignment, returnStatement) = callExpression.body.statements
+
+            val assignmentExpression = (assignment as? JsExpressionStatement ?: return simple()).expression
+            val (lhs, rhs) = JsAstUtils.decomposeAssignmentToVariable(assignmentExpression) ?: return simple()
+            if (lhs != name) return simple()
+
+            val wrapperBody = ((rhs as? JsInvocation)?.qualifier as? JsFunction)?.body ?: return simple()
+            val function = (wrapperBody.statements.lastOrNull() as? JsReturn)?.expression as? JsFunction ?: return simple()
+
+            if (returnStatement !is JsReturn) return simple()
+            val returnInvocation = returnStatement.expression as? JsInvocation ?: return simple()
+            val returnName = (returnInvocation.qualifier as? JsNameRef)?.name ?: return simple()
+            if (returnName != name || returnInvocation.arguments.isNotEmpty()) return simple()
+
+            return FunctionWithWrapper(function, JsBlock(wrapperBody.statements.filter { it !is JsReturn }))
         }
     }
 
     val functionWithMetadata: JsExpression
         get() {
-            val propertiesList = listOf(tag, callExpression)
+            val propertiesList = listOf(tag, wrapInlineFunction())
             return JsInvocation(Namer.createInlineFunction(), propertiesList)
         }
+
+    private fun wrapInlineFunction(): JsExpression {
+        val (function, wrapperBody) = this.function
+        if (wrapperBody == null) return function
+
+        val runner = JsFunction(function.scope, JsBlock(), "")
+        val wrapperName = JsScope.declareTemporaryName("runner")
+        runner.name = wrapperName
+
+        val builder = JsFunction(runner.scope, JsBlock(), "")
+        builder.body.statements += wrapperBody.statements
+        builder.body.statements += JsReturn(JsInvocation(JsAstUtils.pureFqn(wrapperName, null)))
+
+        runner.body.statements += JsAstUtils.assignment(wrapperName.makeRef(), JsInvocation(builder)).makeStmt()
+        runner.body.statements += JsReturn(JsInvocation(wrapperName.makeRef()))
+
+        return runner
+    }
 }

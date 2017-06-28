@@ -226,9 +226,7 @@ fun collectAccessors(scope: JsNode): Map<String, FunctionWithWrapper> {
     scope.accept(object : RecursiveJsVisitor() {
         override fun visitInvocation(invocation: JsInvocation) {
             InlineMetadata.decompose(invocation)?.let {
-                extractFunction(it.callExpression)?.let { function ->
-                    accessors[it.tag.value] = function
-                }
+                accessors[it.tag.value] = it.function
             }
             super.visitInvocation(invocation)
         }
@@ -247,16 +245,7 @@ fun collectAccessors(fragments: List<JsProgramFragment>): Map<String, FunctionWi
 
 private fun extractFunction(expression: JsExpression) = when (expression) {
     is JsFunction -> FunctionWithWrapper(expression, null)
-    else -> {
-        val inlineMetadata = InlineMetadata.decompose(expression)
-        if (inlineMetadata != null) {
-            val callExpression = ((inlineMetadata.callExpression as? JsInvocation)?.qualifier as? JsFunction)?.body
-            FunctionWithWrapper(inlineMetadata.function, callExpression)
-        }
-        else {
-            null
-        }
-    }
+    else -> InlineMetadata.decompose(expression)?.function
 }
 
 fun <T : JsNode> collectInstances(klass: Class<T>, scope: JsNode): List<T> {

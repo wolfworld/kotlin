@@ -191,14 +191,7 @@ class FunctionReader(
         val position = info.offsetToSourceMapping[offset]
         val functionOrIif = parseFunction(source, info.filePath, position, offset, ThrowExceptionOnErrorReporter, JsRootScope(JsProgram()))
         functionOrIif.fixForwardNameReferences()
-        val function = InlineMetadata.tryExtractFunction(functionOrIif) ?: return null
-        val wrapper = if (function != functionOrIif) {
-            val body = ((functionOrIif as JsInvocation).qualifier as JsFunction).body
-            JsBlock(body.statements.filter { it !is JsReturn })
-        }
-        else {
-            null
-        }
+        val (function, wrapper) = InlineMetadata.tryExtractFunction(functionOrIif) ?: return null
         val moduleReference = moduleNameMap[tag] ?: currentModuleName.makeRef()
 
         val sourceMap = info.sourceMap
