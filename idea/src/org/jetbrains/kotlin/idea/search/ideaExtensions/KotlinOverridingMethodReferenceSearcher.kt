@@ -16,6 +16,7 @@
 
 package org.jetbrains.kotlin.idea.search.ideaExtensions
 
+import com.intellij.openapi.project.DumbService
 import com.intellij.psi.*
 import com.intellij.psi.impl.search.MethodTextOccurrenceProcessor
 import com.intellij.psi.impl.search.MethodUsagesSearcher
@@ -23,6 +24,7 @@ import com.intellij.psi.search.GlobalSearchScope
 import com.intellij.psi.search.UsageSearchContext
 import com.intellij.psi.search.searches.MethodReferencesSearch
 import com.intellij.psi.util.MethodSignatureUtil
+import com.intellij.psi.util.PsiUtil
 import com.intellij.psi.util.TypeConversionUtil
 import com.intellij.util.Processor
 import org.jetbrains.kotlin.asJava.toLightMethods
@@ -42,9 +44,14 @@ import org.jetbrains.kotlin.utils.ifEmpty
 
 class KotlinOverridingMethodReferenceSearcher : MethodUsagesSearcher() {
     override fun processQuery(p: MethodReferencesSearch.SearchParameters, consumer: Processor<PsiReference>) {
+        val method = p.method
+        val isConstructor = DumbService.getInstance(p.project).runReadActionInSmartMode<Boolean> { method.isConstructor }
+        if (isConstructor) {
+            return
+        }
+
         super.processQuery(p, consumer)
 
-        val method = p.method
         p.project.runReadActionInSmartMode {
             val containingClass = method.containingClass ?: return@runReadActionInSmartMode
 
