@@ -119,9 +119,9 @@ fun<Target> updateIncrementalCaches(
         generatedFiles: List<GeneratedFile<Target>>,
         compiledWithErrors: Boolean,
         getIncrementalCache: (Target) -> IncrementalCacheImpl<Target>
-): CompilationResult {
+): ChangesRegistry {
 
-    var changesInfo = CompilationResult.NO_CHANGES
+    var changesInfo = ChangesRegistry.NO_CHANGES
     for (generatedFile in generatedFiles) {
         val ic = getIncrementalCache(generatedFile.target)
         when {
@@ -181,7 +181,7 @@ data class DirtyData(
         val dirtyClassesFqNames: Collection<FqName> = emptyList()
 )
 
-fun CompilationResult.getDirtyData(
+fun ChangesRegistry.getDirtyData(
         caches: Iterable<IncrementalCacheCommon>,
         reporter: ICReporter
 ): DirtyData {

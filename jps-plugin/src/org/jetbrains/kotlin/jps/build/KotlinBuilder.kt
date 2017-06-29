@@ -22,7 +22,6 @@ import com.intellij.openapi.util.io.FileUtil
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.containers.MultiMap
 import gnu.trove.THashSet
-import jdk.nashorn.internal.lookup.Lookup
 import org.jetbrains.jps.ModuleChunk
 import org.jetbrains.jps.builders.BuildTarget
 import org.jetbrains.jps.builders.DirtyFilesHolder
@@ -571,11 +570,11 @@ class KotlinBuilder : ModuleLevelBuilder(BuilderCategory.SOURCE_PROCESSOR) {
             compilationErrors: Boolean,
             incrementalCaches: Map<ModuleBuildTarget, JpsIncrementalCacheImpl>,
             generatedFiles: List<GeneratedFile<ModuleBuildTarget>>
-    ): CompilationResult {
+    ): ChangesRegistry {
 
         assert(IncrementalCompilation.isEnabled()) { "updateKotlinIncrementalCache should not be called when incremental compilation disabled" }
 
-        var changesInfo = CompilationResult.NO_CHANGES
+        var changesInfo = ChangesRegistry.NO_CHANGES
         for (generatedFile in generatedFiles) {
             val ic = incrementalCaches[generatedFile.target]!!
             val newChangesInfo =
@@ -783,7 +782,7 @@ private class JpsICReporter : ICReporter {
     }
 }
 
-private fun CompilationResult.processChangesUsingLookups(
+private fun ChangesRegistry.processChangesUsingLookups(
         compiledFiles: Set<File>,
         dataManager: BuildDataManager,
         fsOperations: FSOperationsHelper,
