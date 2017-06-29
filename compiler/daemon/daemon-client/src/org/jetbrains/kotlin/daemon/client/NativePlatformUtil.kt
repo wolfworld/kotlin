@@ -16,14 +16,20 @@
 
 package org.jetbrains.kotlin.daemon.client
 
+import net.rubygrapefruit.platform.ProcessLauncher
 import org.jetbrains.kotlin.daemon.common.DaemonReportCategory
+import java.io.File
 import java.io.IOException
 import java.net.URLClassLoader
 
 private class NativePlatformLauncherWrapper {
+    private val nativeLauncher: ProcessLauncher by lazy {
+        net.rubygrapefruit.platform.Native.init(File("." + File.pathSeparator + "build" + File.pathSeparator + "np").canonicalFile)
+        net.rubygrapefruit.platform.Native.get(net.rubygrapefruit.platform.ProcessLauncher::class.java)
+    }
+
     fun launch(processBuilder: ProcessBuilder): Process =
             try {
-                val nativeLauncher = net.rubygrapefruit.platform.Native.get(net.rubygrapefruit.platform.ProcessLauncher::class.java)
                 nativeLauncher.start(processBuilder)
             }
             catch (e: net.rubygrapefruit.platform.NativeException) {
@@ -37,7 +43,7 @@ fun launchProcessWithFallback(processBuilder: ProcessBuilder, reportingTargets: 
             NativePlatformLauncherWrapper().launch(processBuilder)
         }
         catch (e: UnsatisfiedLinkError) {
-            reportingTargets.report(DaemonReportCategory.INFO, "${e.message}\n\ncurrent cp:\n${(Thread.currentThread().contextClassLoader as? URLClassLoader)?.urLs?.joinToString("\n")}\n")
+            reportingTargets.report(DaemonReportCategory.INFO, "${e.message}\n\njava.library.path = ${System.getProperty("java.library.path")}\ncurrent cp:\n${(Thread.currentThread().contextClassLoader as? URLClassLoader)?.urLs?.joinToString("\n")}\n")
             throw e
         }
         catch (e: IOException) {
