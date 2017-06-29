@@ -22,6 +22,7 @@ import com.intellij.codeInspection.ProblemsHolder
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import org.jetbrains.kotlin.idea.intentions.ConvertToExpressionBodyIntention
 import org.jetbrains.kotlin.psi.*
+import org.jetbrains.kotlin.psi.psiUtil.anyDescendantOfType
 
 class UseExpressionBodyInspection : AbstractKotlinInspection() {
 
@@ -41,8 +42,10 @@ class UseExpressionBodyInspection : AbstractKotlinInspection() {
 
                     blockExpression.parent as? KtDeclarationWithBody ?: return
 
+                    // No early returns
+                    if (expression.returnedExpression?.anyDescendantOfType<KtReturnExpression>() == true) return
+
                     val suffix = when {
-                        expression.returnedExpression is KtIfExpression -> "'return if'"
                         expression.returnedExpression is KtWhenExpression -> "'return when'"
                         expression.isOneLiner() -> "one-line return"
                         else -> return

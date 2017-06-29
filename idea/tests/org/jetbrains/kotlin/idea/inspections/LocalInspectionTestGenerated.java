@@ -1150,6 +1150,12 @@ public class LocalInspectionTestGenerated extends AbstractLocalInspectionTest {
             String fileName = KotlinTestUtils.navigationMetadata("idea/testData/inspectionsLocal/useExpressionBody/when.kt");
             doTest(fileName);
         }
+
+        @TestMetadata("whenWithEarlyReturn.kt")
+        public void testWhenWithEarlyReturn() throws Exception {
+            String fileName = KotlinTestUtils.navigationMetadata("idea/testData/inspectionsLocal/useExpressionBody/whenWithEarlyReturn.kt");
+            doTest(fileName);
+        }
     }
 
     @TestMetadata("idea/testData/inspectionsLocal/wrapUnaryOperator")

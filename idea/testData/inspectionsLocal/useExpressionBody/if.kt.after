@@ -1,7 +1,0 @@
-fun abs(x: Int): Int = // Controversial, may be we should not report anything here
-        if (x > 0) {
-            x
-        }
-        else {
-            -x
-        }
