@@ -17,7 +17,6 @@ dependencies {
 }
 
 configureKotlinProjectSources("core/builtins/src", "core/runtime.jvm/src", sourcesBaseDir = rootDir)
-configureKotlinProjectResources(listOf(builtinsSerialized))
 configureKotlinProjectNoTests()
 
 val serialize = task("internal.serialize") {
@@ -37,7 +36,7 @@ val serialize = task("internal.serialize") {
 
 configure<JavaPluginConvention> {
     sourceSets.getByName("main").apply {
-        resources.setSrcDirs(listOf(builtinsSerialized))
+        output.dir(mapOf("builtBy" to serialize), builtinsSerialized)
     }
 }
 
@@ -51,16 +50,6 @@ task("sourcesets") {
             }
         }
     }
-}
-
-tasks.withType<JavaCompile> {
-    dependsOn(protobufLiteTask)
-    dependsOn(serialize)
-}
-
-tasks.withType<KotlinCompile> {
-    dependsOn(protobufLiteTask)
-    dependsOn(serialize)
 }
 
 fixKotlinTaskDependencies()

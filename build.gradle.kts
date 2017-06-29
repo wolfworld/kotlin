@@ -1,12 +1,6 @@
 import java.util.*
-import java.io.File
 import org.gradle.api.tasks.bundling.Jar
-import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.kotlin.dsl.java
-import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.internal.HasConvention
-import org.gradle.api.tasks.testing.Test
-import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 import org.jetbrains.kotlin.gradle.tasks.Kotlin2JsCompile
 
@@ -113,6 +107,7 @@ extra["compilerModules"] = arrayOf(":compiler:util",
                                    ":compiler",
                                    ":build-common",
                                    ":core:util.runtime",
+                                   ":core:builtins",
                                    ":core")
 
 allprojects {
