@@ -107,7 +107,6 @@ extra["compilerModules"] = arrayOf(":compiler:util",
                                    ":compiler",
                                    ":build-common",
                                    ":core:util.runtime",
-                                   ":core:builtins",
                                    ":core")
 
 allprojects {
