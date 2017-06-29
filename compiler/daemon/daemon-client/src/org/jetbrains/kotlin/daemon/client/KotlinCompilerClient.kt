@@ -341,6 +341,7 @@ object KotlinCompilerClient {
         }
         catch (e: Throwable) {
             reportingTargets.report(DaemonReportCategory.EXCEPTION, e.toString())
+            throw e
         }
         return null
     }
