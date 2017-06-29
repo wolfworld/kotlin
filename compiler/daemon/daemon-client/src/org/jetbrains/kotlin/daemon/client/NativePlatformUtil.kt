@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.daemon.client
 
 import org.jetbrains.kotlin.daemon.common.DaemonReportCategory
 import java.io.IOException
+import java.net.URLClassLoader
 
 private class NativePlatformLauncherWrapper {
     fun launch(processBuilder: ProcessBuilder): Process =
@@ -34,6 +35,10 @@ private class NativePlatformLauncherWrapper {
 fun launchProcessWithFallback(processBuilder: ProcessBuilder, reportingTargets: DaemonReportingTargets, reportingSource: String = "process launcher"): Process =
         try {
             NativePlatformLauncherWrapper().launch(processBuilder)
+        }
+        catch (e: UnsatisfiedLinkError) {
+            reportingTargets.report(DaemonReportCategory.INFO, "${e.message}\n\ncurrent cp:\n${(Thread.currentThread().contextClassLoader as? URLClassLoader)?.urLs?.joinToString("\n")}\n")
+            throw e
         }
         catch (e: IOException) {
             reportingTargets.report(DaemonReportCategory.DEBUG, "Could not start process with native process launcher, falling back to ProcessBuilder#start (${e.cause})")
