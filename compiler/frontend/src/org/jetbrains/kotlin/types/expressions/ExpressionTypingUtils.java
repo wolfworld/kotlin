@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2016 JetBrains s.r.o.
+ * Copyright 2010-2017 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,15 +26,13 @@ import org.jetbrains.kotlin.descriptors.*;
 import org.jetbrains.kotlin.descriptors.impl.AnonymousFunctionDescriptor;
 import org.jetbrains.kotlin.descriptors.impl.FunctionExpressionDescriptor;
 import org.jetbrains.kotlin.descriptors.impl.SimpleFunctionDescriptorImpl;
+import org.jetbrains.kotlin.descriptors.impl.SyntheticFieldDescriptorKt;
 import org.jetbrains.kotlin.diagnostics.Diagnostic;
 import org.jetbrains.kotlin.diagnostics.DiagnosticFactory;
 import org.jetbrains.kotlin.diagnostics.Errors;
 import org.jetbrains.kotlin.lexer.KtTokens;
 import org.jetbrains.kotlin.psi.*;
-import org.jetbrains.kotlin.resolve.BindingTrace;
-import org.jetbrains.kotlin.resolve.DescriptorToSourceUtils;
-import org.jetbrains.kotlin.resolve.ObservableBindingTrace;
-import org.jetbrains.kotlin.resolve.OverloadChecker;
+import org.jetbrains.kotlin.resolve.*;
 import org.jetbrains.kotlin.resolve.scopes.LexicalScope;
 import org.jetbrains.kotlin.resolve.scopes.LexicalScopeKind;
 import org.jetbrains.kotlin.resolve.scopes.LexicalWritableScope;
@@ -108,6 +106,13 @@ public class ExpressionTypingUtils {
             @NotNull VariableDescriptor variableDescriptor
     ) {
         VariableDescriptor oldDescriptor = ScopeUtilsKt.findLocalVariable(scope, variableDescriptor.getName());
+
+        if (KtPsiUtil.isBackingFieldReference(oldDescriptor)) {
+            PropertyDescriptor property = SyntheticFieldDescriptorKt.getReferencedProperty(oldDescriptor);
+            if (Boolean.FALSE.equals(trace.getBindingContext().get(BindingContext.BACKING_FIELD_REQUIRED, property))) {
+                return;
+            }
+        }
 
         if (oldDescriptor != null && isLocal(variableDescriptor.getContainingDeclaration(), oldDescriptor)) {
             PsiElement declaration = DescriptorToSourceUtils.descriptorToDeclaration(variableDescriptor);
