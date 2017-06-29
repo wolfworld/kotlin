@@ -24,7 +24,12 @@ import java.net.URLClassLoader
 
 private class NativePlatformLauncherWrapper {
     private val nativeLauncher: ProcessLauncher by lazy {
-        net.rubygrapefruit.platform.Native.init(File("." + File.pathSeparator + "build" + File.pathSeparator + "np").canonicalFile)
+        val libdir = File("." + File.pathSeparator + "dist" + File.pathSeparator + "np").canonicalFile
+        val nativePaths = System.getProperty("java.library.path")
+        System.setProperty("java.library.path",
+                           nativePaths?.let { it + File.pathSeparator + libdir.canonicalPath }
+                           ?: libdir.canonicalPath )
+        net.rubygrapefruit.platform.Native.init(libdir)
         net.rubygrapefruit.platform.Native.get(net.rubygrapefruit.platform.ProcessLauncher::class.java)
     }
 
@@ -43,7 +48,7 @@ fun launchProcessWithFallback(processBuilder: ProcessBuilder, reportingTargets: 
             NativePlatformLauncherWrapper().launch(processBuilder)
         }
         catch (e: UnsatisfiedLinkError) {
-            reportingTargets.report(DaemonReportCategory.INFO, "${e.message}\n\njava.library.path = ${System.getProperty("java.library.path")}\ncurrent cp:\n${(Thread.currentThread().contextClassLoader as? URLClassLoader)?.urLs?.joinToString("\n")}\n")
+            println("!!! ${e.message}\n\njava.library.path = ${System.getProperty("java.library.path")}\ncurrent cp:\n${(Thread.currentThread().contextClassLoader as? URLClassLoader)?.urLs?.joinToString("\n")}\n")
             throw e
         }
         catch (e: IOException) {
